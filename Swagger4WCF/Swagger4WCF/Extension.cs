@@ -48,6 +48,11 @@ namespace Swagger4WCF
             return (T)attribute.ConstructorArguments[index].Value;
         }
 
+        static public bool Value(this CustomAttribute attribute, string name)
+        {
+            return attribute.Properties.Any(_Property => _Property.Name == name);
+        }
+
         static public T Value<T>(this CustomAttribute attribute, string name)
         {
             return (T)attribute.Properties.Single(_Property => _Property.Name == name).Argument.Value;

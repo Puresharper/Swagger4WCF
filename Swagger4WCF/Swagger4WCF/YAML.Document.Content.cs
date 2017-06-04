@@ -47,10 +47,10 @@ namespace Swagger4WCF
                         this.Add("- https");
                     }
                     this.Add("basePath: /", type.Name);
-                    this.Add("consumes:");
-                    using (new Block(this)) { this.Add("- application/json"); }
-                    this.Add("produces:");
-                    using (new Block(this)) { this.Add("- application/json"); }
+                    //this.Add("consumes:");
+                    //using (new Block(this)) { this.Add("- application/json"); }
+                    //this.Add("produces:");
+                    //using (new Block(this)) { this.Add("- application/json"); }
                     this.Add("paths:");
                     var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
                     using (new Block(this))
@@ -133,6 +133,18 @@ namespace Swagger4WCF
                         {
                             this.Add("summary: ", method.Name);
                             if (documentation != null && documentation[method].Summary != null) { this.Add("description: ", documentation[method].Summary); }
+                            this.Add("consumes:");
+                            using (new Block(this))
+                            {
+                                if (_attribute.Value("RequestFormat") && _attribute.Value<WebMessageFormat>("RequestFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
+                                else { this.Add("- application/xml"); }
+                            }
+                            this.Add("produces:");
+                            using (new Block(this))
+                            {
+                                if (_attribute.Value("ResponseFormat") && _attribute.Value<WebMessageFormat>("ResponseFormat") == WebMessageFormat.Json) { this.Add("- application/json"); }
+                                else { this.Add("- application/xml"); }
+                            }
                             if (_parameters.Count > 0)
                             {
                                 this.Add("parameters:");
