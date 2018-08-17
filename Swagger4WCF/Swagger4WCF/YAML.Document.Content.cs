@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime;
@@ -16,6 +17,10 @@ namespace Swagger4WCF
         {
             private partial class Content
             {
+                private StringBuilder m_Builder = new StringBuilder();
+                private Tabulation m_Tabulation = new Tabulation("  ", 0);
+                private List<TypeReference> definitionList = new List<TypeReference>();
+
                 static public Document Generate(TypeDefinition type, Documentation documentation)
                 {
                     return new Document(type, new Content(type, documentation));
@@ -26,8 +31,11 @@ namespace Swagger4WCF
                     return compiler == null ? null : compiler.ToString();
                 }
 
-                private StringBuilder m_Builder = new StringBuilder();
-                private Tabulation m_Tabulation = new Tabulation("  ", 0);
+                public override string ToString()
+                {
+                    return this.m_Builder.ToString();
+                }
+
 
                 private Content(TypeDefinition type, Documentation documentation)
                 {
@@ -47,10 +55,6 @@ namespace Swagger4WCF
                         this.Add("- https");
                     }
                     this.Add("basePath: /", type.Name);
-                    //this.Add("consumes:");
-                    //using (new Block(this)) { this.Add("- application/json"); }
-                    //this.Add("produces:");
-                    //using (new Block(this)) { this.Add("- application/json"); }
                     this.Add("paths:");
                     var _methods = type.Methods.Where(_Method => _Method.IsPublic && !_Method.IsStatic && _Method.GetCustomAttribute<OperationContractAttribute>() != null).OrderBy(_Method => _Method.MetadataToken.ToInt32()).ToArray();
                     using (new Block(this))
@@ -63,46 +67,45 @@ namespace Swagger4WCF
                     this.Add("definitions:");
                     using (new Block(this))
                     {
-                        foreach (var _response in _methods.Select(_Method => _Method.ReturnType).Distinct().OrderBy(_Type => _Type.Name).Where(_Type => !(_Type.Resolve() == _Type.Resolve().Module.Import(typeof(void)).Resolve()) && !(_Type.Resolve() == _Type.Resolve().Module.Import(typeof(bool)).Resolve()) && !(_Type.Resolve() == _Type.Resolve().Module.Import(typeof(string)).Resolve()) && !(_Type.Resolve() == _Type.Resolve().Module.Import(typeof(int)).Resolve()) && !(_Type.Resolve() == _Type.Resolve().Module.Import(typeof(long)).Resolve()) && !(_Type.Resolve() == _Type.Resolve().Module.Import(typeof(DateTime)).Resolve())).Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct())
+                        var responses = _methods.Select(_Method => _Method.ReturnType).Distinct()
+                            .OrderBy(typeRef => typeRef.Name)
+                            .Where(typeRef =>
+                                !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
+                                && !(typeRef.Resolve() ==
+                                     typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
+                            .Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
+
+                        definitionList.AddRange(responses.ToList());
+
+                        var resparameters = _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.ParameterType)
+                            .OrderBy(typeRef => typeRef.Name)
+                            .Where(typeRef =>
+                                !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(void)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(bool)).Resolve())
+                                && !(typeRef.Resolve() ==
+                                     typeRef.Resolve().Module.ImportReference(typeof(string)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(int)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(long)).Resolve())
+                                && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
+                            .Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
+
+                        definitionList.AddRange(resparameters.ToList());
+                        int beforeCnt = definitionList.Count;
+                        for (int i = 0; i < beforeCnt; i++)
                         {
-                            if (_response.Resolve() == _response.Module.Import(typeof(void)).Resolve()) { throw new NotSupportedException("Type 'System.Void' is not supported as return type."); }
-                            if (_response.Resolve().GetCustomAttribute<DataContractAttribute>() == null) { throw new NotSupportedException(string.Format("Type '{0}' is not a data contract.", _response.FullName)); }
-                            this.Add(_response.Name, ":");
-                            using (new Block(this))
-                            {
-                                this.Add("type: object");
-                                if (documentation != null && documentation[_response.Resolve()] != null) { this.Add(string.Concat("description: ", documentation[_response.Resolve()])); }
-                                this.Add("properties:");
-                                using (new Block(this))
-                                {
-                                    foreach (var _property in _response.Resolve().Properties.Where(_Property => _Property.GetCustomAttribute<DataMemberAttribute>() != null).OrderBy(_Property => _Property.MetadataToken.ToInt32()))
-                                    {
-                                        this.Add(_property, documentation);
-                                    }
-                                }
-                            }
+                            ParseComplexType(definitionList[i], documentation);
                         }
-                        //this.Add("Error:");
-                        //using (new Block(this))
-                        //{
-                        //    this.Add("type: object");
-                        //    this.Add("properties:");
-                        //    using (new Block(this))
-                        //    {
-                        //        this.Add("Code:");
-                        //        using (new Block(this))
-                        //        {
-                        //            this.Add("type: string");
-                        //            this.Add("description: Code");
-                        //        }
-                        //        this.Add("Message:");
-                        //        using (new Block(this))
-                        //        {
-                        //            this.Add("type: string");
-                        //            this.Add("description: Message");
-                        //        }
-                        //    }
-                        //}
+
+                        int afterCnt = definitionList.Count;
+
+                        for (int i = beforeCnt; i < afterCnt; i++)
+                        {
+                            ParseComplexType(definitionList[i], documentation);
+                        }
                     }
                 }
 
@@ -121,16 +124,20 @@ namespace Swagger4WCF
                         if (_attribute == null)
                         {
                             _attribute = method.GetCustomAttribute<WebGetAttribute>();
-                            if (_attribute == null) { throw new NotSupportedException(); }
+                            if (_attribute == null)
+                            {
+                                return;
+                            }
                             this.Add("get:");
                         }
                         else if (string.IsNullOrEmpty(_attribute.Value<string>("Method")))
                         {
-                            throw new NotSupportedException();
+                            return;
                         }
                         else { this.Add(_attribute.Value<string>("Method").ToLower(), ":"); }
                         using (new Block(this))
                         {
+
                             this.Add("summary: ", method.Name);
                             if (documentation != null && documentation[method].Summary != null) { this.Add("description: ", documentation[method].Summary); }
                             this.Add("consumes:");
@@ -148,9 +155,18 @@ namespace Swagger4WCF
                             if (_parameters.Count > 0)
                             {
                                 this.Add("parameters:");
-                                using (new Block(this)) { foreach (var _parameter in _parameters) { this.Add(method, _parameter, documentation); } }
+                                using (new Block(this))
+                                {
+                                    foreach (var _parameter in _parameters)
+                                    {
+                                        this.Add(method, _parameter, documentation);
+                                    }
+                                }
                                 this.Add("tags:");
-                                using (new Block(this)) { this.Add("- ", method.DeclaringType.Name); }
+                                using (new Block(this))
+                                {
+                                    this.Add("- ", method.DeclaringType.Name);
+                                }
                             }
                             this.Add("responses:");
                             using (new Block(this))
@@ -158,56 +174,23 @@ namespace Swagger4WCF
                                 this.Add("200:");
                                 using (new Block(this))
                                 {
-                                    if (documentation != null && documentation[method].Response != null) { this.Add("description: ", documentation[method].Response); }
-                                    else { this.Add("description: OK"); }
-                                    if (method.ReturnType.Resolve() != method.Module.Import(typeof(void)).Resolve())
+                                    if (documentation != null && documentation[method].Response != null)
+                                    {
+                                        this.Add("description: ", documentation[method].Response);
+                                    }
+                                    else
+                                    {
+                                        this.Add("description: OK");
+                                    }
+                                    if (method.ReturnType.Resolve() != method.Module.ImportReference(typeof(void)).Resolve())
                                     {
                                         this.Add("schema:");
-                                        using (new Block(this)) { this.Add(method.ReturnType); }
+                                        using (new Block(this))
+                                        {
+                                            this.Add(method.ReturnType, documentation);
+                                        }
                                     }
                                 }
-                                //this.Add("400:");
-                                //using (new Block(this))
-                                //{
-                                //    this.Add("description: Bad Request");
-                                //    this.Add("schema:");
-                                //    using (new Block(this)) { this.Add("type: \"string\""); }
-                                //}
-                                //this.Add("401:");
-                                //using (new Block(this))
-                                //{
-                                //    this.Add("description: Unauthorized");
-                                //    this.Add("schema:");
-                                //    using (new Block(this)) { this.Add("type: \"string\""); }
-                                //}
-                                //this.Add("403:");
-                                //using (new Block(this))
-                                //{
-                                //    this.Add("description: Forbidden");
-                                //    this.Add("schema:");
-                                //    using (new Block(this)) { this.Add("type: \"string\""); }
-                                //}
-                                //this.Add("409:");
-                                //using (new Block(this))
-                                //{
-                                //    this.Add("description: Conflict");
-                                //    this.Add("schema:");
-                                //    using (new Block(this)) { this.Add("type: \"string\""); }
-                                //}
-                                //this.Add("500:");
-                                //using (new Block(this))
-                                //{
-                                //    this.Add("description: Internal Server Error");
-                                //    this.Add("schema:");
-                                //    using (new Block(this)) { this.Add("type: \"string\""); }
-                                //}
-                                //this.Add("503:");
-                                //using (new Block(this))
-                                //{
-                                //    this.Add("description: Service Unavailable");
-                                //    this.Add("schema:");
-                                //    using (new Block(this)) { this.Add("type: \"string\""); }
-                                //}
                                 this.Add("default:");
                                 using (new Block(this))
                                 {
@@ -226,20 +209,30 @@ namespace Swagger4WCF
                     this.Add("- name: ", parameter.Name);
                     using (new Block(this))
                     {
-                        if (_type.Resolve() == _type.Module.Import(typeof(string)).Resolve() || _type.Resolve() == _type.Module.Import(typeof(int)).Resolve() || _type.Resolve() == _type.Module.Import(typeof(long)).Resolve() || _type.Resolve() == _type.Module.Import(typeof(DateTime)).Resolve() || _type.IsArray)
+                        if (_type.Resolve() == _type.Module.ImportReference(typeof(string)).Resolve()
+                            || _type.Resolve() == _type.Module.ImportReference(typeof(int)).Resolve()
+                            || _type.Resolve() == _type.Module.ImportReference(typeof(long)).Resolve()
+                            || _type.Resolve() == _type.Module.ImportReference(typeof(DateTime)).Resolve()
+                            || _type.IsArray)
                         {
                             this.Add("in: query");
                             if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
                             this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
-                            this.Add(parameter.ParameterType);
+                            this.Add(parameter.ParameterType, documentation);
                         }
                         else
                         {
                             this.Add("in: body");
-                            if (documentation != null && documentation[method, parameter] != null) { this.Add("description: ", documentation[method, parameter]); }
+                            if (documentation != null && documentation[method, parameter] != null)
+                            {
+                                this.Add("description: ", documentation[method, parameter]);
+                            }
                             this.Add("required: ", parameter.ParameterType.IsValueType.ToString().ToLower());
                             this.Add("schema:");
-                            using (new Block(this)) { this.Add(parameter.ParameterType); }
+                            using (new Block(this))
+                            {
+                                this.Add(parameter.ParameterType, documentation);
+                            }
                         }
                     }
                 }
@@ -249,26 +242,32 @@ namespace Swagger4WCF
                     this.Add(property.Name, ":");
                     using (new Block(this))
                     {
-                        this.Add(property.PropertyType);
+                        this.Add(property.PropertyType, documentation);
                         if (documentation != null && documentation[property] != null) { this.Add("description: ", documentation[property]); }
                     }
                 }
 
-                private void Add(TypeReference type)
+                private void Add(TypeReference type, Documentation documentation)
                 {
-                    if (type.Resolve() == type.Module.Import(typeof(string)).Resolve()) { this.Add("type: \"string\""); }
-                    else if (type.Resolve() == type.Module.Import(typeof(bool)).Resolve()) { this.Add("type:\" boolean\""); }
-                    else if (type.Resolve() == type.Module.Import(typeof(int)).Resolve())
+                    if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve()) { this.Add("type: \"string\""); }
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve()) { this.Add("type:\" boolean\""); }
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
                     {
                         this.Add("type: \"number\"");
                         this.Add("format: int32");
                     }
-                    else if (type.Resolve() == type.Module.Import(typeof(long)).Resolve())
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(long)).Resolve())
                     {
                         this.Add("type: \"number\"");
                         this.Add("format: int32");
                     }
-                    else if (type.Resolve() == type.Module.Import(typeof(string)).Resolve())
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(decimal)).Resolve()
+                             || type.Resolve() == type.Module.ImportReference(typeof(decimal?)).Resolve())
+                    {
+                        this.Add("type: \"number\"");
+                        this.Add("format: decimal(9,2)");
+                    }
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
                     {
                         this.Add("type: \"string\"");
                         this.Add("format: date-time");
@@ -277,19 +276,58 @@ namespace Swagger4WCF
                     {
                         this.Add("type: array");
                         this.Add("items:");
-                        using (new Block(this)) { this.Add(type.GetElementType()); }
+                        using (new Block(this)) { this.Add(type.GetElementType(), documentation); }
                     }
-                    else if (type.Resolve() == type.Module.Import(typeof(string)).Resolve()) { }
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve()) { }
                     else
                     {
-                        if (type.Resolve().GetCustomAttribute<DataContractAttribute>() == null) { throw new NotSupportedException(string.Format("Type '{0}' is not a data contract.", type.FullName)); }
-                        this.Add("$ref: \"#/definitions/", type.Name, "\"");
+                        if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null)
+                        {
+                            definitionList.Add(type);
+                            this.Add("$ref: \"#/definitions/", type.Name, "\"");
+                        }
+                        else
+                        {
+                            this.Add("$ref: \"#/definitions/", type.Name, "\"");
+                        }
+
                     }
                 }
 
-                override public string ToString()
+                private void ParseComplexType(TypeReference referenceType, Documentation documentation)
                 {
-                    return this.m_Builder.ToString();
+                    if (referenceType.Resolve() == referenceType.Module.ImportReference(typeof(void)).Resolve())
+                    {
+                        return;
+                    }
+
+                    if (referenceType.Resolve() == null)
+                    {
+                        return;
+                    }
+                    this.Add(referenceType.Name, ":");
+                    using (new Block(this))
+                    {
+                        this.Add("type: object");
+                        if (documentation != null && !String.IsNullOrEmpty(documentation[referenceType.Resolve()]))
+                        {
+                            this.Add(string.Concat("description: ", documentation[referenceType.Resolve()]));
+                        }
+
+                        if (referenceType.Resolve().Properties.Count > 0)
+                        {
+                            this.Add("properties:");
+                            using (new Block(this))
+                            {
+                                var propertyDefinitions = referenceType.Resolve().Properties;
+
+                                foreach (var propertyDefinition in propertyDefinitions)
+                                {
+                                    this.Add(propertyDefinition, documentation);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
