@@ -18,28 +18,35 @@ namespace Swagger4WCF
         static public CustomAttribute GetCustomAttribute<T>(this AssemblyDefinition assembly)
             where T : Attribute
         {
-            var _type = assembly.MainModule.Import(typeof(T)).Resolve();
-            return assembly.CustomAttributes.SingleOrDefault(_Attribute => assembly.MainModule.Import(_Attribute.AttributeType).Resolve() == _type);
+            var _type = assembly.MainModule.ImportReference(typeof(T)).Resolve();
+            return assembly.CustomAttributes.SingleOrDefault(_Attribute => assembly.MainModule.ImportReference(_Attribute.AttributeType).Resolve() == _type);
         }
 
         static public CustomAttribute GetCustomAttribute<T>(this TypeDefinition type)
             where T : Attribute
         {
-            var _type = type.Module.Import(typeof(T)).Resolve();
-            return type.CustomAttributes.SingleOrDefault(_Attribute => _Attribute.AttributeType.Resolve() == _type);
+            try
+            {
+                var _type = type.Module.ImportReference(typeof(T)).Resolve();
+                return type.CustomAttributes.SingleOrDefault(_Attribute => _Attribute.AttributeType.Resolve() == _type);
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"type = {type.Name}", e); 
+            }
         }
 
         static public CustomAttribute GetCustomAttribute<T>(this MethodDefinition method)
             where T : Attribute
         {
-            var _type = method.Module.Import(typeof(T)).Resolve();
+            var _type = method.Module.ImportReference(typeof(T)).Resolve();
             return method.CustomAttributes.SingleOrDefault(_Attribute => _Attribute.AttributeType.Resolve() == _type);
         }
 
         static public CustomAttribute GetCustomAttribute<T>(this PropertyDefinition property)
             where T : Attribute
         {
-            var _type = property.Module.Import(typeof(T)).Resolve();
+            var _type = property.Module.ImportReference(typeof(T)).Resolve();
             return property.CustomAttributes.SingleOrDefault(_Attribute => _Attribute.AttributeType.Resolve() == _type);
         }
 
