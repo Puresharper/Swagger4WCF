@@ -57,7 +57,7 @@ namespace Swagger4WCF
 
         static public bool Value(this CustomAttribute attribute, string name)
         {
-            return attribute.Properties.Any(_Property => _Property.Name == name);
+            return attribute != null && attribute.Properties.Any(_Property => _Property.Name == name);
         }
 
         static public T Value<T>(this CustomAttribute attribute, string name)
