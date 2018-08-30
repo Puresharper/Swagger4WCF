@@ -45,7 +45,12 @@ namespace Swagger4WCF
                     {
                         this.Add("title: ", type.Name);
                         if (documentation[type] != null) { this.Add("description: ", documentation[type]); }
-                        this.Add($"version: \"{ type.Module.Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Argument<string>(0) }\"");
+                        var _customAttribute = type.Module.Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+                        var _argument = _customAttribute?.Argument<string>(0);
+                        if (_argument != null)
+                        {
+                            this.Add($"version: \"{ _argument }\"");
+                        }
                     }
                     this.Add("host: localhost");
                     this.Add("schemes:");
