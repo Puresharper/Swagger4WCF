@@ -249,8 +249,14 @@ namespace Swagger4WCF
 
                 private void Add(TypeReference type, Documentation documentation)
                 {
-                    if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve()) { this.Add("type: \"string\""); }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve()) { this.Add("type:\" boolean\""); }
+                    if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
+                    {
+                        this.Add("type: \"string\"");
+                    }
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
+                    {
+                        this.Add("type:\" boolean\"");
+                    }
                     else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
                     {
                         this.Add("type: \"number\"");
@@ -267,7 +273,7 @@ namespace Swagger4WCF
                         this.Add("type: \"number\"");
                         this.Add("format: decimal(9,2)");
                     }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve())
+                    else if (type.Resolve() == type.Module.ImportReference(typeof(DateTime)).Resolve())
                     {
                         this.Add("type: \"string\"");
                         this.Add("format: date-time");
