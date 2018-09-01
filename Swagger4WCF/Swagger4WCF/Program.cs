@@ -42,24 +42,23 @@ namespace Swagger4WCF
             var _resolver = new DefaultAssemblyResolver();
             _resolver.AddSearchDirectory(_directory);
             var _domain = Directory.EnumerateFiles(_directory, "*.dll").Select(_File =>
+            {
+                try
                 {
-                    try
+                    return new
                     {
-                        return
-                            new
+                        Assembly = AssemblyDefinition.ReadAssembly(_File,
+                            new ReaderParameters()
                             {
-                                Assembly = AssemblyDefinition.ReadAssembly(_File,
-                                    new ReaderParameters()
-                                    {
-                                        AssemblyResolver = _resolver,
-                                        ReadSymbols = true,
-                                        ReadingMode = ReadingMode.Immediate
-                                    }),
-                                Location = _File
-                            };
-                    }
-                    catch { return null; }
-                }).Where(_Entry => _Entry != null).ToArray();
+                                AssemblyResolver = _resolver,
+                                ReadSymbols = true,
+                                ReadingMode = ReadingMode.Immediate
+                            }),
+                        Location = _File
+                    };
+                }
+                catch { return null; }
+            }).Where(_Entry => _Entry != null).ToArray();
             foreach (var _entry in _domain)
             {
                 foreach (var _document in YAML.Generate(_entry.Assembly, Documentation.Load(_entry.Location, _entry.Assembly)))
