@@ -20,7 +20,7 @@ namespace Swagger4WCF
 
             static public implicit operator string(YAML.Document document)
             {
-                return document == null ? null : document.ToString();
+                return document?.ToString();
             }
 
             private TypeDefinition m_Type;

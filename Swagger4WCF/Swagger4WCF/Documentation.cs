@@ -46,24 +46,14 @@ namespace Swagger4WCF
                 {
                     var _name = _xAttribute.Value;
                     var _xElement = _member.Element("summary");
-                    if (_xElement != null) this.dictionary.Add(_name, Arrange(_xElement.Value));
-
-                    if (!_name.StartsWith("M:")) continue;
-
+                    if (_xElement != null) { this.m_Dictionary.Add(_name, Arrange(_xElement.Value)); }
+                    if (!_name.StartsWith("M:")) { continue; }
                     var _element = _member.Element("returns");
-                    if (_element != null)
-                    {
-                        this.dictionary.Add(string.Concat("R", _name.Substring(1)), Arrange(_element.Value));
-                    }
-
+                    if (_element != null) { this.m_Dictionary.Add(string.Concat("R", _name.Substring(1)), Arrange(_element.Value)); }
                     foreach (var _parameter in _member.Elements("param"))
                     {
                         var _attribute = _parameter.Attribute("name");
-                        if (_attribute != null)
-                        {
-                            this.dictionary.Add(string.Concat("A", _name.Substring(1), ".", _attribute.Value),
-                                Arrange(_parameter.Value));
-                        }
+                        if (_attribute != null) { this.m_Dictionary.Add(string.Concat("A", _name.Substring(1), ".", _attribute.Value), Arrange(_parameter.Value)); }
                     }
                 }
             }
