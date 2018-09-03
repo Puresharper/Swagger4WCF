@@ -1,33 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.ServiceModel;
+﻿using System.ServiceModel;
 using System.ServiceModel.Web;
-using System.Text;
-using System.Threading.Tasks;
+using Swagger4WCF.Demo.Models;
 
 namespace Swagger4WCF.Demo
 {
-    /// <summary>
-    /// Person
-    /// </summary>
-    [DataContract]
-    public class Person
-    {
-        /// <summary>
-        /// Firstname
-        /// </summary>
-        [DataMember]
-        public string Firstname { get; set; }
-
-        /// <summary>
-        /// Lastname
-        /// </summary>
-        [DataMember]
-        public string Lastname { get; set; }
-    }
-
     /// <summary>
     /// WCF service to create various messages.
     /// </summary>
