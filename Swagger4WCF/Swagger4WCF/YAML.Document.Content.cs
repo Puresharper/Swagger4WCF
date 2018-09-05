@@ -289,7 +289,18 @@ namespace Swagger4WCF
                         this.Add("items:");
                         using (new Block(this)) { this.Add(type.GetElementType(), documentation); }
                     }
-                    else if (type.Resolve() == type.Module.ImportReference(typeof(string)).Resolve()) { }
+                    else if (type is TypeDefinition typeDef && typeDef.IsEnum)
+                    {
+                        this.Add("type: \"string\"");
+                        this.Add("enum:");
+                        
+                        foreach (var field in typeDef.Fields)
+                        {
+                            if (field.Name == "value__")
+                                continue;
+                            this.Add($"- {field.Name}");
+                        }
+                    }
                     else
                     {
                         if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null)
