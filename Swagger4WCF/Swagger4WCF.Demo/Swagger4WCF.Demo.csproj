@@ -49,11 +49,18 @@
   <ItemGroup>
     <Compile Include="IWCFService1.cs" />
     <Compile Include="Models\Gender.cs" />
+    <Compile Include="Models\AnotherPerson.cs" />
     <Compile Include="Models\Person.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Swagger4WCF\Swagger4WCF.csproj">
+      <Project>{4a5677a4-b462-4fdb-9f9d-552af7a8fed8}</Project>
+      <Name>Swagger4WCF</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Swagger4WCF.1.0.2\build\Swagger4WCF.targets" Condition="Exists('..\packages\Swagger4WCF.1.0.2\build\Swagger4WCF.targets')" />
