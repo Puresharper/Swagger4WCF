@@ -260,7 +260,7 @@ namespace Swagger4WCF
                     }
                     else if (type.Resolve() == type.Module.ImportReference(typeof(bool)).Resolve())
                     {
-                        this.Add("type:\" boolean\"");
+                        this.Add("type: \"boolean\"");
                     }
                     else if (type.Resolve() == type.Module.ImportReference(typeof(int)).Resolve())
                     {
