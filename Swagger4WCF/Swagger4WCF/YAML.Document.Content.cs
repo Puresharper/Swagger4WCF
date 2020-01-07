@@ -84,7 +84,13 @@ namespace Swagger4WCF
                                 && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
                             .Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
 
-                        definitionList.AddRange(responses.ToList());
+                        foreach (var response in responses)
+                        {
+                            if (!definitionList.Contains(response))
+                            {
+                                definitionList.Add(response);
+                            }
+                        }
 
                         var resparameters = _methods.SelectMany(_Method => _Method.Parameters).Select(x => x.ParameterType)
                             .OrderBy(typeRef => typeRef.Name)
@@ -98,7 +104,13 @@ namespace Swagger4WCF
                                 && !(typeRef.Resolve() == typeRef.Resolve().Module.ImportReference(typeof(DateTime)).Resolve()))
                             .Select(_Type => _Type.IsArray ? _Type.GetElementType() : _Type).Distinct();
 
-                        definitionList.AddRange(resparameters.ToList());
+                        foreach (var resparameter in resparameters)
+                        {
+                            if (!definitionList.Contains(resparameter))
+                            {
+                                definitionList.Add(resparameter);
+                            }
+                        }
                         int beforeCnt = definitionList.Count;
                         for (int i = 0; i < beforeCnt; i++)
                         {
@@ -108,6 +120,13 @@ namespace Swagger4WCF
                         int afterCnt = definitionList.Count;
 
                         for (int i = beforeCnt; i < afterCnt; i++)
+                        {
+                            ParseComplexType(definitionList[i], documentation);
+                        }
+
+                        int afterafterCnt = definitionList.Count;
+
+                        for (int i = afterCnt; i < afterafterCnt; i++)
                         {
                             ParseComplexType(definitionList[i], documentation);
                         }
@@ -293,7 +312,7 @@ namespace Swagger4WCF
                     {
                         this.Add("type: \"string\"");
                         this.Add("enum:");
-                        
+
                         foreach (var field in typeDef.Fields)
                         {
                             if (field.Name == "value__")
@@ -303,7 +322,7 @@ namespace Swagger4WCF
                     }
                     else
                     {
-                        if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null)
+                        if (type.Resolve()?.GetCustomAttribute<DataContractAttribute>() == null || !definitionList.Contains(type))
                         {
                             definitionList.Add(type);
                             this.Add("$ref: \"#/definitions/", type.Name, "\"");
