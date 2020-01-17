@@ -6,7 +6,7 @@ namespace Swagger4WCF.Demo.Models
     /// Person
     /// </summary>
     [DataContract]
-    public class Person
+    public class AnotherPerson
     {
         /// <summary>
         /// First name
@@ -25,11 +25,5 @@ namespace Swagger4WCF.Demo.Models
         /// </summary>
         [DataMember]
         public Gender Gender { get; set; }
-
-        /// <summary>
-        /// Gender
-        /// </summary>
-        [DataMember]
-        public AnotherPerson Parent { get; set; }
     }
 }
